@@ -9,7 +9,15 @@
   const stat = function (s) { return (STATUS[s] || [s])[0]; };
   // Suara bubble chat (mengikuti tombol speaker). Diputar hanya untuk pesan masuk dari lawan bicara.
   const bubbleSnd = new Audio('./audio/chat-bubble.mp3'); bubbleSnd.preload = 'auto';
-  const playBubble = function () { if (!window.Suara || !Suara.on) return; try { bubbleSnd.currentTime = 0; const p = bubbleSnd.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { } };
+  const sendSnd = new Audio('./audio/chat-kirim.mp3'); sendSnd.preload = 'auto';
+  const play1 = function (a) { if (!window.Suara || !Suara.on) return; try { a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(function () { }); } catch (e) { } };
+  const playBubble = function () { play1(bubbleSnd); };
+  const playSend = function () { play1(sendSnd); };
+  // Browser memblokir suara sebelum ada sentuhan: sentuhan pertama "membuka kunci" kedua efek suara chat
+  document.addEventListener('pointerdown', function unlock() {
+    [bubbleSnd, sendSnd].forEach(function (a) { a.muted = true; const p = a.play(); if (p && p.then) p.then(function () { a.pause(); a.currentTime = 0; a.muted = false; }, function () { a.muted = false; }); });
+    document.removeEventListener('pointerdown', unlock);
+  }, { passive: true });
   Chat.bunyi = playBubble;
 
   // Tombol "Chat" di kartu pesanan (dengan jumlah pesan baru)
@@ -64,7 +72,7 @@
     $('#chForm', v).onsubmit = function (e) {
       e.preventDefault(); const inp = $('#chIn', v), isi = inp.value.trim();
       if (!isi || sending) return;
-      sending = true; inp.value = '';
+      sending = true; inp.value = ''; playSend();
       const box = $('#chList', v); box.insertAdjacentHTML('beforeend', bubble({ saya: true, nama: 'Anda', peran: '', isi: isi, waktu: new Date().toISOString(), pending: true })); box.scrollTop = box.scrollHeight;
       act('chat.kirim', { bid: bid, isi: isi }).then(function () { sending = false; load(); }).catch(function (er) { sending = false; inp.value = isi; toastErr(er); load(); });
     };

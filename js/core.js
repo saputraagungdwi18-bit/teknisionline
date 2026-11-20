@@ -176,11 +176,13 @@
     const r = R.routes[key] || R.routes[R.home];
     if (!r) return;
     if (R.cleanup) { try { R.cleanup(); } catch (e) { } R.cleanup = null; }
+    const prevCur = R.cur, savedY = W.scrollY || 0, sameRoute = prevCur === key;
     let view = $('#view'); if (!view) return;
     // Elemen #view diganti baru tiap render: membuang SEMUA penangan event lama (cegah aksi ganda / dialog berlipat setelah bolak-balik menu)
     const fresh = view.cloneNode(false); view.parentNode.replaceChild(fresh, view); view = fresh;
-    R.cur = key; R.gen++; W.scrollTo(0, 0);
-    view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
+    R.cur = key; R.gen++;
+    if (!sameRoute) { W.scrollTo(0, 0); view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter'); }
+    else requestAnimationFrame(function () { W.scrollTo(0, savedY); }); // render ulang halaman yang sama (pembaruan otomatis): posisi scroll dipertahankan
     if (R.onRoute) R.onRoute(key, params);
     try { R.cleanup = r.render(view, params) || null; } catch (e) { console.error(e); view.innerHTML = empty('warn', 'Halaman gagal dimuat', e.message); }
     document.title = (r.title ? r.title + ' • ' : '') + ((S.cfg && S.cfg.Nama_Aplikasi) || 'FieldTech Direct');
@@ -234,18 +236,28 @@
     loadCss('https://cdnjs.cloudflare.com/ajax/libs/leaflet/' + LV + '/leaflet.min.css');
     return W.L ? Promise.resolve(W.L) : loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet/' + LV + '/leaflet.min.js').then(function () { return W.L; });
   };
+  // Satu elemen peta hanya boleh punya satu peta. Panggilan kedua untuk elemen yang sama memakai proses yang sedang berjalan,
+  // dan peta lama di elemen itu dibuang lebih dulu (mencegah error Leaflet "map container is being reused by another instance").
   W.newMap = function (el, lat, lng, zoom, o) {
-    return loadMap().then(function (L) {
+    if (el._fdBusy) return el._fdBusy;
+    const p = loadMap().then(function (L) {
+      if (el._fdMap) { try { el._fdMap.remove(); } catch (e) { } el._fdMap = null; }
       el.innerHTML = '';
+      try { delete el._leaflet_id; } catch (e) { el._leaflet_id = undefined; }
       const m = L.map(el, Object.assign({ zoomControl: false, attributionControl: true, touchZoom: false }, o || {})).setView([lat, lng], zoom || 14); // cubit peta dimatikan; zoom lewat tombol +/−
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(m);
-      setTimeout(function () { m.invalidateSize(); }, 150);
+      setTimeout(function () { try { m.invalidateSize(); } catch (e) { } }, 150);
+      el._fdMap = m;
       return m;
     }).catch(function () { // pustaka peta gagal dimuat: tampilkan pesan, fitur lain tetap jalan
+      el._fdBusy = null;
       el.innerHTML = '<div class="alert warn" style="margin:0">' + ic('warn') + '<div>Peta tidak dapat dimuat. Periksa koneksi internet.<br><button class="btn sm secondary" data-retry-map>Coba lagi</button></div></div>';
       const b = $('[data-retry-map]', el); if (b) b.onclick = function () { if (W.Router) Router.render(); };
       return new Promise(function () { });
     });
+    el._fdBusy = p;
+    p.then(function () { el._fdBusy = null; }, function () { el._fdBusy = null; });
+    return p;
   };
   W.divIcon = function (html, cls, size) { return W.L.divIcon({ html: html, className: 'mk ' + (cls || ''), iconSize: [size || 36, size || 36], iconAnchor: [(size || 36) / 2, (size || 36) / 2] }); };
   W.mkHome = function () { return divIcon(ic('home', 18), 'mk-home', 34); };
@@ -371,24 +383,23 @@
     eo.setUint32(0, 0x06054b50, true); eo.setUint16(8, files.length, true); eo.setUint16(10, files.length, true); eo.setUint32(12, cdSize, true); eo.setUint32(16, off, true);
     return new Blob(parts.concat(central, [new Uint8Array(eo.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   };
-  W.saveFile = function (blob, nama) {
-    try {
-      const f = (typeof File === 'function') ? new File([blob], nama, { type: blob.type }) : null;
-      if (f && navigator.canShare && navigator.share && navigator.canShare({ files: [f] })) {
-        return navigator.share({ files: [f], title: nama }).catch(function (e) { if (!e || e.name !== 'AbortError') unduh(blob, nama); });
-      }
-    } catch (e) { }
-    unduh(blob, nama);
-  };
+  // Berkas langsung diunduh/disimpan ke folder Download perangkat
+  W.saveFile = function (blob, nama) { unduh(blob, nama); };
   // Cetak / simpan PDF lewat jendela browser sendiri (tanpa pustaka luar). Bila pop-up diblokir, berkas HTML diunduh.
-  W.printHtml = function (judul, isi) {
-    const html = '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>' + esc(judul) + '</title><style>' +
+  W.htmlDoc = function (judul, isi) {
+    return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>' + esc(judul) + '</title><style>' +
       'body{font:11px/1.35 Arial,Helvetica,sans-serif;color:#111;margin:14px}h2{font-size:16px;margin:0 0 4px}p{margin:3px 0;color:#444}' +
       'table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#eef2ff;text-align:left;font-size:9.5px;text-transform:uppercase;padding:4px 6px;border-bottom:1.5px solid #4f46e5}' +
       'td{padding:3px 6px;border-bottom:1px solid #ddd;font-size:10px}thead{display:table-header-group}tr{page-break-inside:avoid}.r{text-align:right}' +
       '.pf{margin-top:10px;font-size:9px;color:#777}@page{size:A4 landscape;margin:12mm}.noprint{margin:12px 0}@media print{.noprint{display:none}}' +
       '</style></head><body>' + isi + '<p class="noprint"><button onclick="window.print()">Cetak / Simpan sebagai PDF</button></p>' +
       '<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},250)});<\/script></body></html>';
+  };
+  // Unduh laporan sebagai HTML (dibuka lalu Cetak → Simpan sebagai PDF); dipakai bila pembuatan PDF di perangkat gagal
+  W.unduhHtml = function (judul, isi, nama) { unduh(new Blob([htmlDoc(judul, isi)], { type: 'text/html;charset=utf-8' }), nama || (judul || 'laporan').replace(/\W+/g, '_') + '.html'); };
+  // Cetak lewat jendela baru (dialog cetak browser). Bila pop-up diblokir, berkas HTML diunduh.
+  W.printHtml = function (judul, isi) {
+    const html = htmlDoc(judul, isi);
     const w = window.open('', '_blank');
     if (w) { w.document.open(); w.document.write(html); w.document.close(); return true; }
     unduh(new Blob([html], { type: 'text/html;charset=utf-8' }), (judul || 'laporan').replace(/\W+/g, '_') + '.html');

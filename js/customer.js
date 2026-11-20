@@ -337,8 +337,8 @@
       const doc = new jspdf.jsPDF({ unit: 'pt', format: 'a4' }); drawBap(doc, b);
       saveFile(doc.output('blob'), 'Berita_Acara_' + b.id + '.pdf');
     }).catch(function () {
-      printHtml('Berita Acara ' + b.id, baHtml(b));
-      toast('PDF tidak dapat dibuat otomatis. Dialog cetak dibuka: pilih "Simpan sebagai PDF".', 'warn');
+      unduhHtml('Berita Acara ' + b.id, baHtml(b), 'Berita_Acara_' + b.id + '.html');
+      toast('PDF tidak dapat dibuat di perangkat ini. Berita Acara diunduh sebagai HTML: buka lalu Cetak → Simpan sebagai PDF.', 'warn');
     });
   };
   // Satu PDF berisi banyak Berita Acara (satu halaman per pesanan). Bila gagal, dibuka versi cetak.
@@ -348,8 +348,8 @@
       for (let i = 0; i < list.length; i++) { if (i) doc.addPage(); drawBap(doc, list[i]); if (onProgress) onProgress(i + 1, list.length); if (i % 4 === 3) await tick(); }
       saveFile(doc.output('blob'), 'Berita_Acara_' + list.length + '_pesanan.pdf');
     }).catch(function () {
-      printHtml('Berita Acara (' + list.length + ' pesanan)', list.map(baHtml).join('<div style="page-break-after:always"></div>'));
-      toast('PDF tidak dapat dibuat otomatis. Dialog cetak dibuka: pilih "Simpan sebagai PDF".', 'warn');
+      unduhHtml('Berita Acara (' + list.length + ' pesanan)', list.map(baHtml).join('<div style="page-break-after:always"></div>'), 'Berita_Acara_' + list.length + '_pesanan.html');
+      toast('PDF tidak dapat dibuat di perangkat ini. Berita Acara diunduh sebagai HTML: buka lalu Cetak → Simpan sebagai PDF.', 'warn');
     });
   };
 })();

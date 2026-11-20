@@ -154,7 +154,7 @@
       };
       if (map && map.getContainer() !== el) { map.remove(); map = null; mkT = null; }
       if (map) return go();
-      newMap(el, b.lat, b.lng, 15).then(function (m) { if (stopped) { m.remove(); return; } map = m; mkT = null; L.control.zoom({ position: 'bottomright' }).addTo(m); go(); });
+      newMap(el, b.lat, b.lng, 15).then(function (m) { if (stopped) { m.remove(); return; } if (map === m) return go(); map = m; mkT = null; L.control.zoom({ position: 'bottomright' }).addTo(m); go(); }); // panggilan kedua untuk peta yang sama: jangan siapkan ulang
     }
     function loadLogs() { return api('booking.get', { id: id }).then(function (r) { if (stopped) return; const old = JSON.stringify([b, logs]); put(r.b); b = r.b; logs = r.logs; if (JSON.stringify([b, logs]) !== old) { if ($('#lg', v) && !(docOpen() && document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName))) { const prevStatus = old; draw(); } else if ($('#lg', v)) $('#lg', v).innerHTML = logHtml(); } }); }
 

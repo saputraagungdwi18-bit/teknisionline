@@ -429,8 +429,8 @@
           saveFile(doc.output('blob'), nama);
           toast('PDF diunduh (' + rpn(all.rows.length) + ' baris, ' + n + ' halaman).', 'ok');
         } catch (e) {
-          printHtml('Laporan Operasional', laporanHtml(all.rows, rk));
-          toast('PDF tidak dapat dibuat otomatis. Dialog cetak dibuka: pilih "Simpan sebagai PDF".', 'warn');
+          unduhHtml('Laporan Operasional', laporanHtml(all.rows, rk), nama.replace(/\.pdf$/, '.html'));
+          toast('PDF tidak dapat dibuat di perangkat ini. Laporan diunduh sebagai HTML: buka lalu Cetak → Simpan sebagai PDF.', 'warn');
         }
       }
       async function ekspBap(btn) {
