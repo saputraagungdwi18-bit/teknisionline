@@ -1,0 +1,24 @@
+{
+  "id": "./",
+  "name": "FieldTech Direct",
+  "short_name": "FieldTech",
+  "description": "Reservasi servis teknisi peralatan rumah tangga langsung ke lokasi Anda",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait-primary",
+  "background_color": "#F6F6FF",
+  "theme_color": "#4F46E5",
+  "lang": "id",
+  "categories": ["business", "utilities", "productivity"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Pesan Teknisi", "short_name": "Pesan", "url": "./index.html#/pesan", "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Lacak Pesanan", "short_name": "Lacak", "url": "./index.html#/lacak", "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
