@@ -3,7 +3,7 @@
  * - Permintaan ke Google Apps Script TIDAK PERNAH di-cache (data selalu segar & aman).
  * - Offline: halaman tetap terbuka dari cache; navigasi jatuh ke index.html.
  * - Pembaruan: versi baru menunggu persetujuan pengguna (tidak memutus isian form). */
-const VERSION = '1.9.3';
+const VERSION = '1.9.4';
 const CACHE = 'fd-shell-v' + VERSION;
 const SHELL = ['./', './index.html', './css/style.css', './js/config.js', './js/core.js', './js/app.js', './js/profil.js', './js/customer.js', './js/tech.js', './js/admin.js', './js/suara.js', './js/chat.js', './audio/pesanan-masuk-chime.mp3', './manifest.json', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './audio/chat-bubble.mp3'];
 const CDN = /(^|\.)cdnjs\.cloudflare\.com$|(^|\.)fonts\.(googleapis|gstatic)\.com$/;
