@@ -72,12 +72,18 @@
 
 
   // Tombol refresh di header setiap menu: segarkan data server lalu muat ulang halaman aktif
+  // Admin: tombol refresh tidak ditampilkan di Dashboard, Papan Penugasan, dan Peta Teknisi Live
+  App.syncRefresh = function (key) {
+    const b = $('#btnRefresh'); if (!b) return;
+    b.hidden = !!(S.me && S.me.role === 'Admin' && ['/dashboard', '/papan', '/armada'].indexOf(key) > -1);
+  };
   App.mountRefresh = function () {
     const old = $('#btnRefresh'); if (old) old.remove();
     const btn = '<button class="icon-btn rfs" id="btnRefresh" aria-label="Segarkan data" title="Segarkan data">' + ic('refresh', 20) + '</button>';
     const anchor = $('#btnSuara') || $('#btnFs') || $('#btnBell') || $('.mbar .hav');
     if (anchor) anchor.insertAdjacentHTML('beforebegin', btn); else return;
     $('#btnRefresh').onclick = function () { App.doRefresh(); };
+    App.syncRefresh(Router.cur);
   };
   App.doRefresh = function () {
     const b = $('#btnRefresh'); if (!S.token || !S.boot) return;
@@ -98,6 +104,7 @@
     const role = S.me.role, nav = NAV[role], R = Router;
     R.home = nav.home; R.role = role;
     R.onRoute = function (key) {
+      if (App.syncRefresh) App.syncRefresh(key);
       $$('[data-nav]').forEach(function (a) { const on = a.dataset.nav === key || (key === '/pesan' && a.dataset.nav === '/pesan'); a.classList.toggle('active', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     };
     const allowed = nav.items.map(function (i) { return i[0]; }).concat(['/profil', '/chat']);
@@ -127,15 +134,20 @@
   }
   function shellAdmin(nav) {
     $('#root').innerHTML =
-      '<div class="ashell"><aside class="side"><div class="side-h">' + logoSvg + '<div><b>' + esc(App.appName()) + '</b><small>DIRECT</small></div><em>ADMIN</em></div>' +
+      '<div class="ashell"><aside class="side" id="side"><div class="side-h">' + logoSvg + '<div><b>' + esc(App.appName()) + '</b><small>DIRECT</small></div><em>ADMIN</em></div>' +
       '<nav>' + nav.items.map(function (i) { return '<a href="#' + i[0] + '" data-nav="' + i[0] + '">' + ic(i[2], 20) + '<span>' + i[1] + '</span>' + (i[0] === '/papan' ? '<i class="nbadge" id="nbPapan" hidden></i>' : '') + '</a>'; }).join('') + '</nav>' +
       '<div class="side-f"><div class="u">' + avatar(S.me.nama, 34, 'ind') + '<div><b>' + esc(S.me.nama) + '</b><small>Senior Dispatcher</small></div></div><a href="#/profil" class="sl">' + ic('user', 16) + '<span>Profil</span></a><button class="sl" id="btnOut">' + ic('logout', 16) + '<span>Keluar</span></button></div></aside>' +
-      '<div class="amain"><header class="atop"><div class="crumb"><span>Operasional</span>' + ic('right', 14) + '<b id="ptitle"></b></div>' +
+      '<div class="amain"><header class="atop"><button class="icon-btn" id="btnMenu" aria-label="Buka menu" aria-controls="side" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><div class="crumb"><span>Operasional</span>' + ic('right', 14) + '<b id="ptitle"></b></div>' +
       '<label class="gsearch">' + ic('search', 16) + '<input id="gq" placeholder="Cari tiket, klien, armada…" aria-label="Cari"></label>' +
       '<span class="sync ok" id="sync"><i></i><span>Sistem Sinkron • Google Sheets DB</span></span>' +
       '<button class="icon-btn" id="btnBell" aria-label="Notifikasi">' + ic('bell') + '<i class="dot" id="bellDot" hidden></i></button>' + avatarBtn() + '</header>' +
-      '<main id="view" class="view"></main></div></div>';
+      '<main id="view" class="view"></main></div><div class="sbg" id="sbg"></div></div>';
     $('#btnOut').onclick = doLogout;
+    const setMenu = function (open) { document.body.classList.toggle('menu-open', open); const mb = $('#btnMenu'); if (mb) mb.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+    $('#btnMenu').onclick = function () { setMenu(!document.body.classList.contains('menu-open')); };
+    $('#sbg').onclick = function () { setMenu(false); };
+    $$('#side nav a').forEach(function (x) { x.addEventListener('click', function () { setMenu(false); }); });
+    if (!App._escMenu) { App._escMenu = true; document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.body.classList.contains('menu-open')) { document.body.classList.remove('menu-open'); } }); }
     $('#btnBell').onclick = function () { location.hash = '/papan'; };
     $('#gq').addEventListener('keydown', function (e) { if (e.key === 'Enter') { S.papanQ = e.target.value; location.hash = '/papan'; if (Router.cur === '/papan') Router.render(); } });
   }
