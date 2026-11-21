@@ -280,3 +280,14 @@ button.svtile,a.svtile{font:inherit;cursor:pointer;background:#fff;border:1px so
 .svtile.add{border:1.5px dashed #A5B4FC;background:#F8F9FF;justify-content:center;color:var(--p)}
 .svall{margin-top:12px}
 @media(max-width:380px){.svgrid{gap:10px 6px}.svimg{width:50px;height:50px;border-radius:16px}}
+
+/* Admin: menu geser (slide-in) dari kiri */
+.ashell{display:block;min-height:100vh}
+.side{position:fixed;left:0;top:0;bottom:0;width:250px;height:100vh;z-index:90;transform:translateX(-104%);transition:transform .28s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 40px rgba(0,0,0,.28);padding:16px 12px;overflow-y:auto}
+body.menu-open .side{transform:none}
+.sbg{position:fixed;inset:0;background:rgba(15,23,42,.45);opacity:0;pointer-events:none;transition:opacity .25s;z-index:85}
+body.menu-open .sbg{opacity:1;pointer-events:auto}
+.amain{min-width:0;width:100%}
+.ashell .sticky-bar{left:0;width:100%;max-width:none}
+@media(max-width:900px){.side-h div,.side-h em,.side nav a span,.side-f .u div,.sl span{display:revert!important}.side{padding:16px 12px}}
+#btnMenu{flex:none}
